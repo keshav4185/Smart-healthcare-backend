@@ -1,0 +1,6 @@
+
+> smart-healthcare-backend@1.0.0 start
+> node src/app.js
+
+Server running on port 5000
+MongoDB connected
