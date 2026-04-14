@@ -26,10 +26,8 @@ app.use('/api/upload',       require('./routes/upload'));
 app.get('/api/health', (_, res) => res.json({ success: true, data: { status: 'Server is running' } }));
 app.use((_, res) => res.status(404).json({ success: false, message: 'Route not found' }));
 
-// Start server immediately — don't block on MongoDB for demo/mock routes
-app.listen(process.env.PORT, () =>
-  console.log(`Server running on port ${process.env.PORT}`)
+connectDB().then(() =>
+  app.listen(process.env.PORT, () =>
+    console.log(`Server running on port ${process.env.PORT}`)
+  )
 );
-
-// Connect MongoDB in background — real DB routes will work when connected
-connectDB().catch(() => console.warn('MongoDB unavailable — mock routes still active'));

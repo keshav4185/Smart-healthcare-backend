@@ -9,7 +9,8 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
-    cb(null, `scan_${req.user?._id || 'unknown'}_${Date.now()}${ext}`);
+    const userId = req.user?._id || 'reg';
+    cb(null, `${file.fieldname}_${userId}_${Date.now()}${ext}`);
   },
 });
 

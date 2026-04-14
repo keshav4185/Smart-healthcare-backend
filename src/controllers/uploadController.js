@@ -33,7 +33,7 @@ const uploadProfilePhoto = async (req, res) => {
     const photoUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
     const user = await User.findByIdAndUpdate(
       req.user._id,
-      { photoUrl },
+      { profilePhoto: photoUrl },
       { new: true }
     ).select('-password -refreshToken');
 

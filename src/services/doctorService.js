@@ -24,7 +24,7 @@ const getDoctorPatients = async (doctorId) => {
   return User.find({ _id: { $in: patientIds } }).select('-password -refreshToken');
 };
 
-const createMedicalRecord = async (doctorId, { appointmentId, title, type, fileUrl, fileSize, patientId }) => {
+const createMedicalRecord = async (doctorId, { appointmentId, title, type, fileUrl, fileSize, patientId, findings }) => {
   const record = await MedicalRecord.create({
     patientId,
     doctorId,
@@ -32,7 +32,8 @@ const createMedicalRecord = async (doctorId, { appointmentId, title, type, fileU
     type,
     fileUrl,
     fileSize,
-    status: 'Active',
+    findings: findings || '',
+    status: 'Completed',
   });
 
   if (appointmentId) {

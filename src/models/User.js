@@ -12,6 +12,8 @@ const userSchema = new mongoose.Schema({
   // Patient fields
   dob: { type: Date },
   bloodGroup: { type: String },
+  age: { type: Number },
+  gender: { type: String, enum: ['Male', 'Female', 'Other'] },
 
   // Doctor fields
   specialty: { type: String },
@@ -20,6 +22,13 @@ const userSchema = new mongoose.Schema({
   experience: { type: Number },
   education: { type: String },
   certificate: { type: String },
+  documents: {
+    degreeCertificate: { type: String, default: '' },
+    idProof: { type: String, default: '' },
+    selfieWithId: { type: String, default: '' },
+  },
+  verificationStatus: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+  isVerified: { type: Boolean, default: false },
   status: { type: String, enum: ['pending', 'verified', 'rejected'], default: 'pending' },
   rating: { type: Number, default: 0 },
   fee: { type: Number },
@@ -27,6 +36,8 @@ const userSchema = new mongoose.Schema({
 
   profilePhoto: { type: String, default: '' },
   refreshToken: { type: String },
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: Date },
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {

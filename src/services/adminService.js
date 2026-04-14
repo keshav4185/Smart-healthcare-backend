@@ -25,9 +25,15 @@ const setDoctorStatus = async (doctorId, status) => {
     throw err;
   }
 
+  const update = {
+    status,
+    verificationStatus: status === DOCTOR_STATUS.VERIFIED ? 'approved' : 'rejected',
+    isVerified: status === DOCTOR_STATUS.VERIFIED,
+  };
+
   const doctor = await User.findOneAndUpdate(
     { _id: doctorId, role: ROLES.DOCTOR },
-    { status },
+    update,
     { new: true }
   ).select('-password -refreshToken');
 

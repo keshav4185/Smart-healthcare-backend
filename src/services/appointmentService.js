@@ -1,6 +1,26 @@
 const Appointment = require('../models/Appointment');
 const User = require('../models/User');
 const { ROLES, DOCTOR_STATUS, APPOINTMENT_STATUS } = require('../constants/roles');
+const { sendAppointmentEmail } = require('../utils/emailService');
+
+const _sendEmail = async (appointment, status) => {
+  try {
+    const apt = await Appointment.findById(appointment._id)
+      .populate('patientId', 'name email')
+      .populate('doctorId', 'name');
+    if (apt?.patientId?.email) {
+      await sendAppointmentEmail({
+        toEmail: apt.patientId.email,
+        patientName: apt.patientId.name,
+        doctorName: apt.doctorId.name,
+        date: apt.date,
+        timeSlot: apt.timeSlot,
+        status,
+        reason: apt.reason,
+      });
+    }
+  } catch { /* email is best-effort */ }
+};
 
 const bookAppointment = async (patientId, body) => {
   const { doctorId, date, timeSlot, reason, symptoms, type } = body;
@@ -44,6 +64,7 @@ const bookAppointment = async (patientId, body) => {
   });
 
   await appointment.populate('doctorId', 'name specialty hospital fee');
+  _sendEmail(appointment, 'booked');
   return appointment;
 };
 
@@ -73,9 +94,11 @@ const modifyAppointment = async (appointmentId, requestingUser, updates) => {
     throw err;
   }
 
-  return Appointment.findByIdAndUpdate(appointmentId, updates, { new: true })
+  const updated = await Appointment.findByIdAndUpdate(appointmentId, updates, { new: true })
     .populate('doctorId', 'name specialty')
     .populate('patientId', 'name email');
+  if (updates.status) _sendEmail(updated, updates.status);
+  return updated;
 };
 
 const cancelAppointmentById = async (appointmentId, requestingUser) => {
