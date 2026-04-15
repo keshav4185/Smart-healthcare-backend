@@ -104,8 +104,11 @@ const forgotPassword = async (email) => {
   user.resetPasswordExpires = Date.now() + 15 * 60 * 1000;
   await user.save();
 
-  await sendResetEmail(email, token);
-  return { message: 'Reset link sent. Check your email.' };
+  const previewUrl = await sendResetEmail(email, token);
+  return {
+    message: 'Reset link sent. Check your email.',
+    ...(previewUrl && { previewUrl }),
+  };
 };
 
 const resetPassword = async (token, newPassword) => {

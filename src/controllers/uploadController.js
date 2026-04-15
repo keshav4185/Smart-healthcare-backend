@@ -37,7 +37,7 @@ const uploadProfilePhoto = async (req, res) => {
       { new: true }
     ).select('-password -refreshToken');
 
-    sendSuccess(res, user);
+    sendSuccess(res, { profilePhoto: user.profilePhoto });
   } catch (err) {
     sendError(res, err.message);
   }

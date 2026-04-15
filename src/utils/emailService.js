@@ -1,18 +1,39 @@
 const nodemailer = require('nodemailer');
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+const useGmail = process.env.EMAIL_USER && !process.env.EMAIL_USER.includes('your_gmail');
+
+let transporter;
+let transporterReady = false;
+
+const getTransporter = async () => {
+  if (transporterReady) return transporter;
+  if (useGmail) {
+    transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+    });
+  } else {
+    const testAccount = await nodemailer.createTestAccount();
+    transporter = nodemailer.createTransport({
+      host: 'smtp.ethereal.email',
+      port: 587,
+      secure: false,
+      auth: { user: testAccount.user, pass: testAccount.pass },
+    });
+    console.log('📧 Ethereal account:', testAccount.user);
+  }
+  transporterReady = true;
+  return transporter;
+};
 
 const sendResetEmail = async (toEmail, resetToken) => {
   const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
+  const transport = await getTransporter();
 
-  await transporter.sendMail({
-    from: `"HealthCare+" <${process.env.EMAIL_USER}>`,
+  const from = useGmail ? `"HealthCare+" <${process.env.EMAIL_USER}>` : '"HealthCare+" <noreply@healthcare.com>';
+
+  const info = await transport.sendMail({
+    from,
     to: toEmail,
     subject: 'Reset Your Password — HealthCare+',
     html: `
@@ -27,6 +48,10 @@ const sendResetEmail = async (toEmail, resetToken) => {
       </div>
     `,
   });
+
+  const previewUrl = !useGmail ? nodemailer.getTestMessageUrl(info) : null;
+  if (previewUrl) console.log('🔗 Preview URL:', previewUrl);
+  return previewUrl;
 };
 
 const sendAppointmentEmail = async ({ toEmail, patientName, doctorName, date, timeSlot, status, reason }) => {
