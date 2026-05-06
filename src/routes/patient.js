@@ -8,8 +8,8 @@ const { sendSuccess, sendError } = require('../utils/response');
 // Public to any authenticated user — patients need to browse verified doctors
 router.get('/doctors', protect, async (req, res) => {
   try {
-    const data = await getAllDoctors('verified');
-    sendSuccess(res, data);
+    const result = await getAllDoctors('verified', 1, 1000);
+    sendSuccess(res, result.doctors);
   } catch (err) {
     sendError(res, err.message);
   }

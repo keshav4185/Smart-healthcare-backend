@@ -19,9 +19,14 @@ const getDoctorAppointments = (doctorId) =>
     .populate('patientId', 'name email phone dob bloodGroup')
     .sort({ date: -1 });
 
-const getDoctorPatients = async (doctorId) => {
+const getDoctorPatients = async (doctorId, page = 1, limit = 10) => {
   const patientIds = await Appointment.distinct('patientId', { doctorId });
-  return User.find({ _id: { $in: patientIds } }).select('-password -refreshToken');
+  const skip = (page - 1) * limit;
+  const [patients, total] = await Promise.all([
+    User.find({ _id: { $in: patientIds } }).select('-password -refreshToken').skip(skip).limit(limit).lean(),
+    patientIds.length,
+  ]);
+  return { patients, total, page, pages: Math.ceil(total / limit) };
 };
 
 const createMedicalRecord = async (doctorId, { appointmentId, title, type, fileUrl, fileSize, patientId, findings }) => {

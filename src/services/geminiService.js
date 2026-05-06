@@ -13,20 +13,20 @@ const withFallback = async (buildRequest) => {
   for (const modelName of MODEL_CHAIN) {
     const model = genAI.getGenerativeModel({ model: modelName });
     try {
-      console.log(`[Gemini] Trying model: ${modelName}`);
+      if (process.env.NODE_ENV !== 'production') console.log(`[Gemini] Trying model: ${modelName}`);
       return await buildRequest(model);
     } catch (err) {
       if (err.status === 429) {
-        console.warn(`[Gemini] ${modelName} quota exceeded, trying next model...`);
+        if (process.env.NODE_ENV !== 'production') console.warn(`[Gemini] ${modelName} quota exceeded, trying next model...`);
         lastErr = err;
         continue;
       }
       throw err;
     }
   }
-  const err = new Error('All Gemini models are currently rate limited. Please try again in a minute.');
-  err.status = 429;
-  throw err;
+  lastErr = lastErr || new Error('All Gemini models are currently rate limited. Please try again in a minute.');
+  lastErr.status = 429;
+  throw lastErr;
 };
 
 const parseJSON = (text) => {

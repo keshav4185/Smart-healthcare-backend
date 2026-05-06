@@ -30,6 +30,15 @@ const updateAppointment = async (req, res) => {
   }
 };
 
+const rescheduleAppointment = async (req, res) => {
+  try {
+    const data = await appointmentService.rescheduleAppointment(req.params.id, req.user, req.body);
+    sendSuccess(res, data);
+  } catch (err) {
+    sendError(res, err.message, err.statusCode || 500);
+  }
+};
+
 const cancelAppointment = async (req, res) => {
   try {
     await appointmentService.cancelAppointmentById(req.params.id, req.user);
@@ -39,4 +48,4 @@ const cancelAppointment = async (req, res) => {
   }
 };
 
-module.exports = { createAppointment, updateAppointment, cancelAppointment, getBookedSlots };
+module.exports = { createAppointment, updateAppointment, rescheduleAppointment, cancelAppointment, getBookedSlots };

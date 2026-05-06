@@ -20,7 +20,7 @@ const getTransporter = async () => {
       secure: false,
       auth: { user: testAccount.user, pass: testAccount.pass },
     });
-    console.log('📧 Ethereal account:', testAccount.user);
+    if (process.env.NODE_ENV !== 'production') console.log('📧 Ethereal account:', testAccount.user);
   }
   transporterReady = true;
   return transporter;
@@ -29,7 +29,7 @@ const getTransporter = async () => {
 const sendResetEmail = async (toEmail, resetToken) => {
   const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
   const transport = await getTransporter();
-
+  if (!transport) throw new Error('Email transporter not initialized');
   const from = useGmail ? `"HealthCare+" <${process.env.EMAIL_USER}>` : '"HealthCare+" <noreply@healthcare.com>';
 
   const info = await transport.sendMail({
@@ -50,7 +50,9 @@ const sendResetEmail = async (toEmail, resetToken) => {
   });
 
   const previewUrl = !useGmail ? nodemailer.getTestMessageUrl(info) : null;
-  if (previewUrl) console.log('🔗 Preview URL:', previewUrl);
+  if (previewUrl) {
+    if (process.env.NODE_ENV !== 'production') console.log('🔗 Preview URL:', previewUrl);
+  }
   return previewUrl;
 };
 
@@ -62,6 +64,7 @@ const sendAppointmentEmail = async ({ toEmail, patientName, doctorName, date, ti
     booked: { subject: 'Appointment Booked 🏥', color: '#2563eb', heading: 'Appointment Booked!', body: `Your appointment with <strong>Dr. ${doctorName}</strong> has been booked successfully.` },
   };
   const msg = statusMessages[status] || statusMessages.booked;
+  if (!transporter) throw new Error('Email transporter not initialized');
   await transporter.sendMail({
     from: `"HealthCare+" <${process.env.EMAIL_USER}>`,
     to: toEmail,

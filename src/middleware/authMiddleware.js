@@ -8,12 +8,15 @@ const protect = async (req, res, next) => {
   }
   try {
     const token = authHeader.split(' ')[1];
+    if (!token) return res.status(401).json({ success: false, message: 'Not authorized, no token' });
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.id).select('-password -refreshToken');
-    if (!req.user) return res.status(401).json({ success: false, message: 'User not found' });
+    const user = await User.findById(decoded.id).select('-password -refreshToken -resetPasswordToken -resetPasswordExpires');
+    if (!user) return res.status(401).json({ success: false, message: 'User not found' });
+    req.user = user;
     next();
-  } catch {
-    res.status(401).json({ success: false, message: 'Token invalid or expired' });
+  } catch (err) {
+    const message = err.name === 'TokenExpiredError' ? 'Token expired' : 'Token invalid';
+    res.status(401).json({ success: false, message });
   }
 };
 

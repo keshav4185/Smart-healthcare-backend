@@ -12,4 +12,7 @@ const medicalRecordSchema = new mongoose.Schema({
   status: { type: String, enum: ['Active', 'Completed'], default: 'Active' },
 }, { timestamps: true });
 
+medicalRecordSchema.index({ patientId: 1 });
+medicalRecordSchema.index({ doctorId: 1 });
+
 module.exports = mongoose.model('MedicalRecord', medicalRecordSchema);

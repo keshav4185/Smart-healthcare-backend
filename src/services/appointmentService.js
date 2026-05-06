@@ -101,6 +101,48 @@ const modifyAppointment = async (appointmentId, requestingUser, updates) => {
   return updated;
 };
 
+const rescheduleAppointment = async (appointmentId, requestingUser, { date, timeSlot }) => {
+  if (!date || !timeSlot) {
+    const err = new Error('date and timeSlot required');
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const apt = await Appointment.findById(appointmentId)
+    .populate('patientId', 'name email')
+    .populate('doctorId', 'name');
+  if (!apt) throw Object.assign(new Error('Appointment not found'), { statusCode: 404 });
+  if (apt.patientId._id.toString() !== requestingUser._id.toString())
+    throw Object.assign(new Error('Not authorized'), { statusCode: 403 });
+  if (!['pending', 'confirmed'].includes(apt.status))
+    throw Object.assign(new Error('Cannot reschedule this appointment'), { statusCode: 400 });
+
+  const conflict = await Appointment.findOne({
+    doctorId: apt.doctorId._id,
+    date: new Date(date),
+    timeSlot,
+    status: { $in: ['pending', 'confirmed'] },
+    _id: { $ne: apt._id },
+  });
+  if (conflict) throw Object.assign(new Error('This time slot is already booked. Please choose another.'), { statusCode: 409 });
+
+  apt.date = new Date(date);
+  apt.timeSlot = timeSlot;
+  apt.status = 'pending';
+  await apt.save();
+
+  try {
+    await sendAppointmentEmail({
+      toEmail: apt.patientId.email,
+      patientName: apt.patientId.name,
+      doctorName: apt.doctorId.name,
+      date, timeSlot, status: 'rescheduled', reason: apt.reason,
+    });
+  } catch { /* best-effort */ }
+
+  return apt;
+};
+
 const cancelAppointmentById = async (appointmentId, requestingUser) => {
   const appointment = await Appointment.findById(appointmentId);
   if (!appointment) {
@@ -120,4 +162,4 @@ const cancelAppointmentById = async (appointmentId, requestingUser) => {
   await appointment.save();
 };
 
-module.exports = { bookAppointment, modifyAppointment, cancelAppointmentById, getBookedSlots };
+module.exports = { bookAppointment, modifyAppointment, cancelAppointmentById, getBookedSlots, rescheduleAppointment };

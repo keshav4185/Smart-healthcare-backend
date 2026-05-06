@@ -34,8 +34,12 @@ const changePassword = async (req, res) => {
 const uploadPhoto = async (req, res) => {
   try {
     if (!req.file) return sendError(res, 'No image uploaded', 400);
-    const base64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-    const data = await userService.updateUserProfile(req.user._id, { profilePhoto: base64 });
+    const photoUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.originalname.replace(/\s/g, '_')}_${Date.now()}${require('path').extname(req.file.originalname)}`;
+    const fs = require('fs');
+    const uploadPath = require('path').join(__dirname, '../../uploads', `${Date.now()}_${req.file.originalname.replace(/\s/g, '_')}`);
+    fs.writeFileSync(uploadPath, req.file.buffer);
+    const savedUrl = `${req.protocol}://${req.get('host')}/uploads/${require('path').basename(uploadPath)}`;
+    const data = await userService.updateUserProfile(req.user._id, { profilePhoto: savedUrl });
     sendSuccess(res, { profilePhoto: data.profilePhoto });
   } catch (err) {
     sendError(res, err.message);

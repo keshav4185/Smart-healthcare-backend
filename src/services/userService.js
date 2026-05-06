@@ -8,8 +8,9 @@ const fetchProfile = async (userId) => {
 };
 
 const updateUserProfile = async (userId, body) => {
-  RESTRICTED_FIELDS.forEach((f) => delete body[f]);
-  return User.findByIdAndUpdate(userId, body, { new: true, runValidators: true })
+  const sanitized = { ...body };
+  RESTRICTED_FIELDS.forEach((f) => delete sanitized[f]);
+  return User.findByIdAndUpdate(userId, sanitized, { new: true, runValidators: true })
     .select('-password -refreshToken');
 };
 

@@ -11,4 +11,6 @@ const diagnosisSchema = new mongoose.Schema({
   recommendations: { type: String },
 }, { timestamps: true });
 
+diagnosisSchema.index({ patientId: 1, createdAt: -1 });
+
 module.exports = mongoose.model('Diagnosis', diagnosisSchema);

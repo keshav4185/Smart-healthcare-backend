@@ -12,7 +12,8 @@ const predictDiagnosis = async (req, res) => {
 
 const getDiagnosisHistory = async (req, res) => {
   try {
-    const data = await diagnosisService.fetchDiagnosisHistory(req.user._id);
+    const { page = 1, limit = 10 } = req.query;
+    const data = await diagnosisService.fetchDiagnosisHistory(req.user._id, Number(page), Number(limit));
     sendSuccess(res, data);
   } catch (err) {
     sendError(res, err.message);

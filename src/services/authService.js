@@ -92,12 +92,9 @@ const logoutUser = async (refreshToken) => {
 };
 
 const forgotPassword = async (email) => {
+  const genericMessage = { message: 'If an account with that email exists, a reset link has been sent.' };
   const user = await User.findOne({ email });
-  if (!user) {
-    const err = new Error('No account found with that email');
-    err.statusCode = 404;
-    throw err;
-  }
+  if (!user) return genericMessage;
 
   const token = crypto.randomBytes(32).toString('hex');
   user.resetPasswordToken = crypto.createHash('sha256').update(token).digest('hex');
@@ -106,7 +103,7 @@ const forgotPassword = async (email) => {
 
   const previewUrl = await sendResetEmail(email, token);
   return {
-    message: 'Reset link sent. Check your email.',
+    ...genericMessage,
     ...(previewUrl && { previewUrl }),
   };
 };

@@ -6,11 +6,11 @@ const diagnose = async (req, res) => {
   try {
     const { symptoms, severity = 'moderate', duration = 'unknown' } = req.body;
     if (!symptoms?.length) return sendError(res, 'symptoms array is required', 400);
+    if (!Array.isArray(symptoms)) return sendError(res, 'symptoms must be an array', 400);
     const result = await gemini.diagnose({ symptoms, severity, duration });
     sendSuccess(res, result);
   } catch (err) {
-    console.error('[AI /diagnose error]', err.message);
-    if (err.status === 429 || err.statusText === 'Too Many Requests') return sendError(res, 'AI quota exceeded. Please wait a minute and try again.', 429);
+    if (err.status === 429) return sendError(res, 'AI quota exceeded. Please wait a minute and try again.', 429);
     sendError(res, err.message);
   }
 };
@@ -21,20 +21,17 @@ const scanAnalysis = async (req, res) => {
     const { scanType = 'medical', symptoms } = req.body;
     const imageBase64 = req.file.buffer.toString('base64');
     const mimeType = req.file.mimetype;
-    const parsedSymptoms = symptoms ? JSON.parse(symptoms) : [];
+    const parsedSymptoms = symptoms ? (() => { try { return JSON.parse(symptoms); } catch { return []; } })() : [];
 
-    // Step 1: Validate image is a medical scan
     const isValid = await gemini.validateMedicalImage({ imageBase64, mimeType, scanType });
     if (!isValid) {
-      return sendError(res, 'The uploaded image does not appear to be a medical scan (X-Ray, MRI, CT Scan, Lab Report). Please upload a valid medical image.', 422);
+      return sendError(res, 'The uploaded image does not appear to be a medical scan. Please upload a valid medical image.', 422);
     }
 
-    // Step 2: Full analysis
     const result = await gemini.analyzeScan({ imageBase64, mimeType, scanType, symptoms: parsedSymptoms });
     sendSuccess(res, result);
   } catch (err) {
-    console.error('[AI /scan-analysis error]', err.message);
-    if (err.status === 429 || err.statusText === 'Too Many Requests') return sendError(res, 'AI quota exceeded. Please wait a minute and try again.', 429);
+    if (err.status === 429) return sendError(res, 'AI quota exceeded. Please wait a minute and try again.', 429);
     sendError(res, err.message);
   }
 };
@@ -76,7 +73,6 @@ const downloadReport = (req, res) => {
 
     doc.end();
   } catch (err) {
-    console.error('[AI /download-report error]', err);
     sendError(res, err.message);
   }
 };
@@ -118,7 +114,6 @@ const downloadDiagnosis = (req, res) => {
 
     doc.end();
   } catch (err) {
-    console.error('[AI /download-diagnosis error]', err);
     sendError(res, err.message);
   }
 };

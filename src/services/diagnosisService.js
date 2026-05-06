@@ -27,7 +27,12 @@ const predictAndSave = async (patientId, { symptoms, severity, duration }) => {
   });
 };
 
-const fetchDiagnosisHistory = (patientId) =>
-  Diagnosis.find({ patientId }).sort({ createdAt: -1 });
+const fetchDiagnosisHistory = (patientId, page = 1, limit = 10) => {
+  const skip = (page - 1) * limit;
+  return Promise.all([
+    Diagnosis.find({ patientId }).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+    Diagnosis.countDocuments({ patientId }),
+  ]).then(([diagnoses, total]) => ({ diagnoses, total, page, pages: Math.ceil(total / limit) }));
+};
 
 module.exports = { predictAndSave, fetchDiagnosisHistory };

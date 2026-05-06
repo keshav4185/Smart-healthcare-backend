@@ -12,10 +12,14 @@ const getAdminDashboard = async () => {
   return { totalPatients, totalDoctors, pendingDoctors, totalAppointments };
 };
 
-const getAllDoctors = (status) => {
+const getAllDoctors = (status, page = 1, limit = 10) => {
   const filter = { role: ROLES.DOCTOR };
   if (status) filter.status = status;
-  return User.find(filter).select('-password -refreshToken');
+  const skip = (page - 1) * limit;
+  return Promise.all([
+    User.find(filter).select('-password -refreshToken').skip(skip).limit(limit).lean(),
+    User.countDocuments(filter),
+  ]).then(([doctors, total]) => ({ doctors, total, page, pages: Math.ceil(total / limit) }));
 };
 
 const setDoctorStatus = async (doctorId, status) => {
